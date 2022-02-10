@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The program is an algorithm for feature point regression of human faces to detect yawning and eye-closing behavior in driving for fatigue detection and alerting. The algorithm uses ResNet-50 as the backbone trained on Wider Facial Landmark in-the-wild dataset. The algorithm introduced a different way of calculating Mean Square Loss by introducing weights calculated by the Euler angle and attributes of the training samples. After the feature points are inferred, the algorithm asserts fatigue by calculating the distance between eye lids and lips: if the distance between eye lids are smaller than a threshold for three seconds and if the distance between upper and lower lips is larger than a certain threshold for five seconds. The result is tested on YawDD Dataset.
+The program is an algorithm for feature point regression of human faces to detect yawning and eye-closing behavior in driving for fatigue detection and alerting. The algorithm uses ResNet-50 with dilated convolution as the backbone trained on Wider Facial Landmark in-the-wild dataset. The algorithm introduced a different way of calculating Mean Square Loss by introducing weights calculated by the Euler angle and attributes of the training samples. After the feature points are inferred, the algorithm asserts fatigue by calculating the distance between eye lids and lips: if the distance between eye lids are smaller than a threshold for three seconds and if the distance between upper and lower lips is larger than a certain threshold for five seconds. The result is tested on YawDD Dataset.
 
 ## 2. Prerequisites
 
