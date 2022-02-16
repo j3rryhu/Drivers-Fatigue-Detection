@@ -24,3 +24,8 @@ First run data-preprocessing.py, it will generate folder Img Dataset with sub-fo
 
 File yawning_detection.py has two segments of code, which both include testing and yawning detection. Download the YawDD dataset and put in the video file path in the parameter video_file to test the result.
 
+## 6. Details on new loss functions.
+
+In order to improve the model's performance on the special samples, those with occlusion, exaggerated expression, and tilted face position. The loss function is revised to include two more weights by calculating Euler angle and the attributes in the WFLW dataset annotations. The new loss function is as the following:
+                       $$ x_2^4 $$
+
