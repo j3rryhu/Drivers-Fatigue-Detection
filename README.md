@@ -27,5 +27,5 @@ File yawning_detection.py has two segments of code, which both include testing a
 ## 6. Details on new loss functions.
 
 In order to improve the model's performance on the special samples, those with occlusion, exaggerated expression, and tilted face position. The loss function is revised to include two more weights by calculating Euler angle and the attributes in the WFLW dataset annotations. The new loss function is as the following:
-                       $$ x_2^4 $$
+$$ \frac{1}{M}\sum_{m=1}^{M}\sum_{n=1}^{N}\Big(\sum_{c=1}^{C}w_n^c\sum_{k=1}^K(1-cos\theta_n^k) \Big)\parallel d_n^m\parallel_2^2$$                                           
 
