@@ -30,4 +30,5 @@ In order to improve the model's performance on the special samples, those with o
 $$ \frac{1}{M}\sum_{m=1}^{M}\sum_{n=1}^{N}\Big(\sum_{c=1}^{C}w_n^c\sum_{k=1}^K(1-cos\theta_n^k) \Big)\parallel d_n^m\parallel_2^2$$                                           
 where K represents three axes of Euler angle, pitch, yaw, roll, C represents 6 types of attributes in the WFLW dataset, $w_c$ represents the weight determined by the reciprocal of the fraction of samples with attribute c in the total dataset.
 
-
+## 7. Acknowledgement
+The idea of new loss functions comes from the paper [PFLD: A Practical Facial Landmark Detector](https://arxiv.org/abs/1902.10859)
