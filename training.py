@@ -10,10 +10,10 @@ from torchvision import transforms
 from loss_function import LossWithEuler
 from euler_angle_calculator import EulerAngleCalc
 import os
+import cv2
+from data_augmentation import DataAug
 show = ToPILImage()
 transfrom = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize([90, 120]),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
@@ -37,27 +37,29 @@ class TrainFaces(data.Dataset):
         self.img_path = '.\\Img Dataset\\imgs\\train'
         f = open('.\\Img Dataset\\annotations\\train_annotation.txt', 'r')
         self.samples = []
+        self.trans = trans
+        dataaug = DataAug(do_random_crop=True)
         for line in f.readlines():
             line = line.split()
             fname = line[0]
+            path = self.img_path+fname
+            img = cv2.imread(path)
+            img = self.trans(img)
             lm = list(map(float, line[1:197]))
             ea = euler_angle_calculation.calculate(landmark)
             boundingbox = list(map(int, line[197: 201]))
             attribute = list(map(int, line[201: 207]))
-            sample = [fname, lm, boundingbox, attribute, ea]
+            sample = [img, lm, boundingbox, attribute, ea]
             self.samples.append(sample)
-        self.trans = trans
+        self.samples = dataaug.preprocess_images(self.samples)
         f.close()
 
     def __getitem__(self, index):
-        name = self.samples[index][1]
-        lm = self.samples[index][2]
-        boundingbox = self.samples[index][3]
-        attribute = self.samples[index][4]
-        ea = self.samples[index][5]
-        path = self.img_path+name
-        img = np.array(Image.open(path).convert('RGB'))
-        img = self.trans(img)
+        img = self.samples[index][0]
+        lm = self.samples[index][1]
+        boundingbox = self.samples[index][2]
+        attribute = self.samples[index][3]
+        ea = self.samples[index][4]
         return img, lm, boundingbox, attribute, ea
 
     def __len__(self):
