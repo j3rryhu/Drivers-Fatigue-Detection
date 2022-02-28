@@ -5,39 +5,21 @@ import random
 
 
 class DataAug:
-    def __init__(self, ground_truth_data, batch_size, image_size,
-                 train_keys, validation_keys,
-                 ground_truth_transformer=None,
-                 path_prefix=None,
+    def __init__(self,
                  saturation_var=0.5,
                  brightness_var=0.5,
-                 contrast_var=0.5,
                  lighting_std=0.5,
                  horizontal_flip_probability=0.5,
                  vertical_flip_probability=0.5,
                  do_random_crop=False,
-                 grayscale=False,
                  zoom_range=[0.75, 1.25],
                  translation_factor=.3):
 
-        self.ground_truth_data = ground_truth_data
-        self.ground_truth_transformer = ground_truth_transformer
-        self.batch_size = batch_size
-        self.path_prefix = path_prefix
-        self.train_keys = train_keys
-        self.validation_keys = validation_keys
-        self.image_size = image_size
-        self.grayscale = grayscale
         self.color_jitter = []
-        if saturation_var:
-            self.saturation_var = saturation_var
-            self.color_jitter.append(self.saturation)
+        self.saturation_var = saturation_var
         if brightness_var:
             self.brightness_var = brightness_var
             self.color_jitter.append(self.brightness)
-        if contrast_var:
-            self.contrast_var = contrast_var
-            self.color_jitter.append(self.contrast)
         self.lighting_std = lighting_std
         self.horizontal_flip_probability = horizontal_flip_probability
         self.vertical_flip_probability = vertical_flip_probability
@@ -57,38 +39,19 @@ class DataAug:
         upperleftx = new_center_x+x_offset
         upperlefty = new_center_y+y_offset
         for idx in range(0, len(bbox), 2):
-            bbox[idx] = bbox[idx]-upperleftx
-            bbox[idx+1] = bbox[idx]-upperlefty
+            bbox[idx] = min(bbox[idx]-upperleftx, 0)
+            bbox[idx+1] = min(bbox[idx]-upperlefty, 0)
         for idx in range(0, len(landmark), 2):
-            landmark[idx] = landmark[idx]-upperleftx
-            landmark[idx+1] = landmark[idx+1]-upperlefty
+            landmark[idx] = min(landmark[idx]-upperleftx, 0)
+            landmark[idx+1] = min(landmark[idx+1]-upperlefty, 0)
         image = image[upperlefty:height, upperleftx:width]
         image = cv2.resize(image, (width, height))
         return image, bbox, landmark
-
-    def _gray_scale(self, image_array):
-        return image_array.dot([0.299, 0.587, 0.114])
-
-    def saturation(self, image_array):
-        gray_scale = self._gray_scale(image_array)
-        alpha = 2.0 * np.random.random() * self.brightness_var
-        alpha = alpha + 1 - self.saturation_var
-        image_array = (alpha * image_array + (1 - alpha) *
-                       gray_scale[:, :, None])
-        return np.clip(image_array, 0, 255)
 
     def brightness(self, image_array):
         alpha = 2 * np.random.random() * self.brightness_var
         alpha = alpha + 1 - self.saturation_var
         image_array = alpha * image_array
-        return np.clip(image_array, 0, 255)
-
-    def contrast(self, image_array):
-        gray_scale = (self._gray_scale(image_array).mean() *
-                      np.ones_like(image_array))
-        alpha = 2 * np.random.random() * self.contrast_var
-        alpha = alpha + 1 - self.contrast_var
-        image_array = image_array * alpha + (1 - alpha) * gray_scale
         return np.clip(image_array, 0, 255)
 
     def lighting(self, image_array):
@@ -127,9 +90,7 @@ class DataAug:
         return image, bbox, landmark
 
     def preprocess_images(self, dataset):
-        methods = [self._do_random_crop, self.horizontal_flip, self.vertical_flip,
-                  self._gray_scale, self.saturation, self.lighting, self.contrast, self.brightness]
-        augment_proportion = random.uniform(0.2, 0.5)
+        augment_proportion = random.uniform(0.2, 0.4)
         augment_num = int(len(dataset.samples)*augment_proportion)
         count = 0
         rand_idices = []
@@ -139,8 +100,28 @@ class DataAug:
                 rand_idices.append(rand_idx)
             else:
                 continue
-            for met in methods:
-                img, lm, boundingbox, attribute, ea = dataset.samples[rand_idx]
-                img_rev = met(img)
-        return
+            img, lm, boundingbox, attribute, ea = dataset.samples[rand_idx]
+            # RANDOM CROP
+            cropped_img, cropped_bbox, cropped_lm = self._do_random_crop(img, boundingbox, lm)
+            rand_insert = random.randint(0, len(dataset.samples))
+            attribute[4] = 1
+            dataset.samples.insert(rand_insert, [cropped_img, cropped_lm, cropped_bbox, attribute, ea])
+            # FLIP
+            flip_method = random.randint(0, 1)
+            if flip_method:
+                flipped_img, flipped_bbox, flipped_lm = self.vertical_flip(img, boundingbox, lm)
+            else:
+                flipped_img, flipped_bbox, flipped_lm = self.horizontal_flip(img, boundingbox, lm)
+            rand_insert = random.randint(0, len(dataset.samples))
+            dataset.samples.insert(rand_insert, [flipped_img, flipped_lm, flipped_bbox, attribute, ea])
+            # LIGHT
+            lit_img = self.lighting(img)
+            rand_insert = random.randint(0, len(dataset.samples))
+            dataset.samples.insert(rand_insert, [lit_img, lm, boundingbox, attribute, ea])
+            # BRIGHTEN
+            brightened_img = self.brightness(img)
+            rand_insert = random.randint(0, len(dataset.samples))
+            dataset.samples.insert(rand_insert, [brightened_img, lm, boundingbox, attribute, ea])
+        return dataset.samples
+
 
