@@ -1,7 +1,7 @@
 import numpy as np
 from torch.utils import data
 from PIL import Image
-from .resnet import ResNet
+from resnet import ResNet
 from torch import nn
 from torch import optim
 import torch as t
@@ -18,7 +18,7 @@ transfrom = transforms.Compose([
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
-ann = open('.\\Img Dataset\\annotations')
+ann = open('./Img Dataset/annotations/train_annotation.txt')
 annotations = ann.readlines()
 attr_num = list(map(int, annotations[-7:-1]))
 euler_angle_calculation = EulerAngleCalc()
@@ -34,19 +34,21 @@ createDir('./', 'models')
 
 class TrainFaces(data.Dataset):
     def __init__(self, trans):
-        self.img_path = '.\\Img Dataset\\imgs\\train'
-        f = open('.\\Img Dataset\\annotations\\train_annotation.txt', 'r')
+        self.img_path = './Img Dataset/imgs/train/'
+        f = open('./Img Dataset/annotations/train_annotation.txt', 'r')
         self.samples = []
         self.trans = trans
         dataaug = DataAug(do_random_crop=True)
         for line in f.readlines():
             line = line.split()
+            if len(line)<202:
+                break
             fname = line[0]
             path = self.img_path+fname
-            img = cv2.imread(path)
+            img = Image.open(path)
             img = self.trans(img)
             lm = list(map(float, line[1:197]))
-            ea = euler_angle_calculation.calculate(landmark)
+            ea = euler_angle_calculation.calculate(lm)
             boundingbox = list(map(int, line[197: 201]))
             attribute = list(map(int, line[201: 207]))
             sample = [img, lm, boundingbox, attribute, ea]
@@ -82,7 +84,7 @@ correct = 0.0
 total = 0.0
 count = 0
 for epoch in range(150):
-    state  = {
+    state = {
         "epoch": epoch+1,
         "state": net.state_dict(),
         "optimizer": optimizer.state_dict()
