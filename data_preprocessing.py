@@ -28,7 +28,11 @@ def boundarea(img, bbox, landmark):
     w = int(w*1.25)
     h = int(h*1.25)
     x_new = center_x - w//2
+    if x_new<0:
+        x_new = 0
     y_new = center_y - h//2
+    if y_new<0:
+        y_new = 0
     new_bbox = [x-x_new, y-y_new, a-x_new, b-y_new]
     for ind in range(0, len(landmark), 2):
         landmark[ind] = landmark[ind] - x_new
@@ -99,7 +103,7 @@ for line in trainf.readlines():
     newtrainf = open('./Img Dataset/annotations/train_annotation.txt', 'a')
     if count==0:
         newtrainf.truncate(0)
-    anno = name+' '
+    anno = file_name.split('/')[-1]+' '
     for ind in range(0, len(landmark_rev)):
         anno = anno + str(landmark_rev[ind]) + ' '
     for bx in bbox_rev:
@@ -110,16 +114,17 @@ for line in trainf.readlines():
     newtrainf.write(anno)
     count += 1
     print('train file {} is saved'.format(name.split('/')[1]))
-newtrainf.write('pose: {}\n'.format(pose))
-newtrainf.write('expression: {}\n'.format(expression))
-newtrainf.write('illumi: {}\n'.format(illumi))
-newtrainf.write('make_up: {}\n'.format(make_up))
-newtrainf.write('occlusion: {}\n'.format(occlusion))
-newtrainf.write('blur: {}\n'.format(blur))
-newtrainf.write('total faces: {}\n'.format(count))
+newtrainf.write('{}\n'.format(pose))  # pose number
+newtrainf.write('{}\n'.format(expression))  # expression number
+newtrainf.write('{}\n'.format(illumi))  # illumination number
+newtrainf.write('{}\n'.format(make_up))  # make up number
+newtrainf.write('{}\n'.format(occlusion))  # occlusion number
+newtrainf.write('{}\n'.format(blur))  # blur number
+newtrainf.write('{}\n'.format(count))  # total number
 newtrainf.close()
 trainf.close()
 
+test_count = 0
 for line in testf.readlines():
     line = line.strip().split()
     landmark = line[0:196]
@@ -161,9 +166,9 @@ for line in testf.readlines():
     file_name = "./Img Dataset/imgs/test/{}".format(count)+'_'+name.split('/')[1]
     cv2.imwrite(file_name, cropped_rect)
     newtestf = open('./Img Dataset/annotations/test_annotation.txt', 'a')
-    if count==0:
+    if test_count==0:
         newtestf.truncate(0)
-    anno = name+' '
+    anno = file_name.split('/')[-1]+' '
     for ind in range(0, len(landmark_rev)):
         anno = anno + str(landmark_rev[ind]) + ' '
     for bx in bbox_rev:
@@ -172,6 +177,6 @@ for line in testf.readlines():
         anno = anno + str(attribute) + ' '
     anno = anno + '\n'
     newtestf.write(anno)
-    count += 1
-    print('test file {} is saved'.format(name.split('/')[1]))
+    test_count += 1
+    print('test file {} is saved'.format(file_name.split('/')[-1]))
 newtestf.close()
