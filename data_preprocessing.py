@@ -1,5 +1,7 @@
 import cv2
 import os
+from data_augmentation import DataAug
+import random
 '''
 [0:196] landmark
 [196:200] bbox
@@ -45,6 +47,13 @@ illumi = 0
 make_up = 0
 occlusion = 0
 blur = 0
+dataaug = DataAug(do_random_crop=True)
+aug_num = 7500*.3
+aug_count = 0
+createDir('./', 'Img Dataset')
+createDir('./Img Dataset', 'imgs')
+createDir('./Img Dataset', 'annotations')
+createDir('./Img Dataset/imgs', 'train')
 for line in trainf.readlines():
     line = line.strip().split()
     landmark = line[0:196]
@@ -94,10 +103,6 @@ for line in trainf.readlines():
     if ymin < bbox[1]:
         bbox[1] = int(ymin)
     cropped_rect, bbox_rev, landmark_rev = boundarea(img, bbox, landmark)
-    createDir('./', 'Img Dataset')
-    createDir('./Img Dataset', 'imgs')
-    createDir('./Img Dataset', 'annotations')
-    createDir('./Img Dataset/imgs', 'train')
     file_name = "./Img Dataset/imgs/train/{}".format(count)+'_'+name.split('/')[1]
     cv2.imwrite(file_name, cropped_rect)
     newtrainf = open('./Img Dataset/annotations/train_annotation.txt', 'a')
@@ -114,6 +119,70 @@ for line in trainf.readlines():
     newtrainf.write(anno)
     count += 1
     print('train file {} is saved'.format(name.split('/')[1]))
+
+    aug_determinator = random.randint(0,10)
+    if 7 > aug_determinator > 2 and aug_count<aug_num:
+        aug_img, aug_bbox, aug_landmark = dataaug.do_random_crop(cropped_rect, bbox_rev, landmark_rev)
+        file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
+        cv2.imwrite(file_name, aug_img)
+        anno = file_name.split('/')[-1] + ' '
+        for ind in range(0, len(aug_landmark)):
+            anno = anno + str(aug_landmark[ind]) + ' '
+        for bx in aug_bbox:
+            anno = anno + str(bx) + ' '
+        attributes[5] = 1
+        for attribute in attributes:
+            anno = anno + str(attribute) + ' '
+        anno = anno + '\n'
+        newtrainf.write(anno)
+        count+=1
+        occlusion+=1
+
+        determine_flip = random.randint(0, 2)
+        if determine_flip:
+            aug_img, aug_bbox, aug_landmark = dataaug.horizontal_flip(cropped_rect, bbox_rev, landmark_rev)
+        else:
+            aug_img, aug_bbox, aug_landmark = dataaug.vertical_flip(cropped_rect, bbox_rev, landmark_rev)
+        file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
+        cv2.imwrite(file_name, aug_img)
+        anno = file_name.split('/')[-1] + ' '
+        for ind in range(0, len(aug_landmark)):
+            anno = anno + str(aug_landmark[ind]) + ' '
+        for bx in aug_bbox:
+            anno = anno + str(bx) + ' '
+        for attribute in attributes:
+            anno = anno + str(attribute) + ' '
+        anno = anno + '\n'
+        newtrainf.write(anno)
+        count+=1
+
+        aug_img = dataaug.brightness(cropped_rect)
+        file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
+        cv2.imwrite(file_name, aug_img)
+        anno = file_name.split('/')[-1] + ' '
+        for ind in range(0, len(landmark_rev)):
+            anno = anno + str(landmark_rev[ind]) + ' '
+        for bx in bbox_rev:
+            anno = anno + str(bx) + ' '
+        attributes[3] = 1
+        for attribute in attributes:
+            anno = anno + str(attribute) + ' '
+        anno = anno + '\n'
+        newtrainf.write(anno)
+
+        aug_img = dataaug.lighting(cropped_rect)
+        file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
+        cv2.imwrite(file_name, aug_img)
+        anno = file_name.split('/')[-1] + ' '
+        for ind in range(0, len(landmark_rev)):
+            anno = anno + str(landmark_rev[ind]) + ' '
+        for bx in bbox_rev:
+            anno = anno + str(bx) + ' '
+        attributes[3] = 1
+        for attribute in attributes:
+            anno = anno + str(attribute) + ' '
+        anno = anno + '\n'
+        newtrainf.write(anno)
 newtrainf.write('{}\n'.format(pose))  # pose number
 newtrainf.write('{}\n'.format(expression))  # expression number
 newtrainf.write('{}\n'.format(illumi))  # illumination number
