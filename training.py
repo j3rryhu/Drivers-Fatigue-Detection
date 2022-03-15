@@ -11,7 +11,6 @@ from loss_function import LossWithEuler
 from euler_angle_calculator import EulerAngleCalc
 import os
 import cv2
-from data_augmentation import DataAug
 show = ToPILImage()
 transfrom = transforms.Compose([
     transforms.ToTensor(),
@@ -38,26 +37,23 @@ class TrainFaces(data.Dataset):
         f = open('./Img Dataset/annotations/train_annotation.txt', 'r')
         self.samples = []
         self.trans = trans
-        dataaug = DataAug(do_random_crop=True)
         for line in f.readlines():
             line = line.split()
             if len(line)<202:
                 break
             fname = line[0]
-            path = self.img_path+fname
-            img = Image.open(path)
-            img = self.trans(img)
+            img_path = self.img_path+fname
             lm = list(map(float, line[1:197]))
             ea = euler_angle_calculation.calculate(lm)
             boundingbox = list(map(int, line[197: 201]))
             attribute = list(map(int, line[201: 207]))
-            sample = [img, lm, boundingbox, attribute, ea]
+            sample = [img_path, lm, boundingbox, attribute, ea]
             self.samples.append(sample)
-        self.samples = dataaug.preprocess_images(self.samples)
         f.close()
 
     def __getitem__(self, index):
-        img = self.samples[index][0]
+        img_path = self.samples[index][0]
+        img = Image.open(img_path)
         lm = self.samples[index][1]
         boundingbox = self.samples[index][2]
         attribute = self.samples[index][3]
@@ -83,6 +79,7 @@ else:
 correct = 0.0
 total = 0.0
 count = 0
+print('all preparation done, start training')
 for epoch in range(150):
     state = {
         "epoch": epoch+1,
