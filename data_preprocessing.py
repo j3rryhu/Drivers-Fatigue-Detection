@@ -15,10 +15,22 @@ transfer into:
 trainf = open('./WFLW/WFLW_annotations/list_98pt_rect_attr_train_test/list_98pt_rect_attr_train.txt', 'r')
 testf = open('./WFLW/WFLW_annotations/list_98pt_rect_attr_train_test/list_98pt_rect_attr_test.txt', 'r')
 
+def clearDir(dir):
+    for i in os.listdir(dir):
+        path_file = os.path.join(dir, i)
+        if os.path.isfile(path_file):
+            os.remove(path_file)
+        else:
+            for f in os.listdir(path_file):
+                path_file2 = os.path.join(path_file, f)
+                if os.path.isfile(path_file2):
+                    os.remove(path_file2)
+
 def createDir(parentdir, dirname):
     if dirname not in os.listdir(parentdir):
         os.mkdir(os.path.join(parentdir, dirname))
-
+    else:
+        clearDir(os.path.join(parentdir, dirname))
 
 # intercept broader area containing human faces for training
 def boundarea(img, bbox, landmark):
@@ -122,7 +134,7 @@ for line in trainf.readlines():
 
     aug_determinator = random.randint(0,10)
     if 7 > aug_determinator > 2 and aug_count<aug_num:
-        aug_img, aug_bbox, aug_landmark = dataaug.do_random_crop(cropped_rect, bbox_rev, landmark_rev)
+        aug_img, aug_bbox, aug_landmark = dataaug._do_random_crop(cropped_rect, bbox_rev, landmark_rev)
         file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
         cv2.imwrite(file_name, aug_img)
         anno = file_name.split('/')[-1] + ' '
