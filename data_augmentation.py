@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
-import scipy.ndimage as ndi
 import random
-import torch
 
 
 class DataAug:
@@ -29,8 +27,7 @@ class DataAug:
         self.translation_factor = translation_factor
 
     def _do_random_crop(self, image, bbox, landmark):
-        image = image.numpy()
-        c, h, w = image.shape
+        h, w, c = image.shape
         resize_factor = 1.5
         face_width = bbox[2]-bbox[0]
         face_height = bbox[3]-bbox[1]
@@ -49,7 +46,7 @@ class DataAug:
             landmark[idx] = max(landmark[idx]-upperleftx, 0)
             landmark[idx+1] = max(landmark[idx+1]-upperlefty, 0)
         image = image[upperlefty:min(upperlefty+face_height, h), upperleftx:min(upperleftx+face_width, w)]
-        image = cv2.resize(image.transpose(1, 2, 0), (int(w*resize_factor), int(h*resize_factor))).transpose(2, 0, 1)
+        image = cv2.resize(image, (int(w*resize_factor), int(h*resize_factor)))
         for i in range(0, len(bbox), 2):
             bbox[i]*=resize_factor
             bbox[i+1]*=resize_factor
@@ -59,14 +56,12 @@ class DataAug:
         return image, bbox, landmark
 
     def brightness(self, image_array):
-        image_array = image_array.numpy()
         alpha = 2 * np.random.random() * self.brightness_var
         alpha = alpha + 1 - self.saturation_var
         image_array = alpha * image_array
         return np.clip(image_array, 0, 255)
 
     def lighting(self, image_array):
-        image_array = image_array.numpy()
         covariance_matrix = np.cov(image_array.reshape(-1, 3) /
                                    255.0, rowvar=False)
         eigen_values, eigen_vectors = np.linalg.eigh(covariance_matrix)
@@ -78,12 +73,12 @@ class DataAug:
         return np.clip(image_array, 0, 255)
 
     def horizontal_flip(self, image, bbox, landmark):
-        c, w, h = image.shape
-        dst = np.zeros((c, w, h), np.uint8)
+        h, w, c = image.shape
+        dst = np.zeros((h, w, c), np.uint8)
         for d in range(c):
             for i in range(w):
                 for j in range(h):
-                    dst[d][i][j] = image[d, w-1-i, h-1]
+                    dst[j][i][d] = image[j][w-1-i][d]
         bbox[0] = w-1-bbox[0]
         bbox[2] = w-1-bbox[2]
         for idx in range(0, len(landmark), 2):
@@ -91,12 +86,12 @@ class DataAug:
         return dst, bbox, landmark
 
     def vertical_flip(self, image, bbox, landmark):
-        c, w, h = image.shape
-        dst = np.zeros((c, w, h), np.uint8)
+        h, w, c = image.shape
+        dst = np.zeros((h, w, c), np.uint8)
         for d in range(c):
             for i in range(w):
                 for j in range(h):
-                    dst[d][i][j] = image[d, w-1, h-j-1]
+                    dst[j][i][d] = image[h-j-1][i][d]
         bbox[1] = h - 1 - bbox[1]
         bbox[3] = h - 1 - bbox[3]
         for idx in range(0, len(landmark), 2):
