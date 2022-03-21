@@ -2,6 +2,7 @@ import cv2
 import os
 from data_augmentation import DataAug
 import random
+import copy
 '''
 [0:196] landmark
 [196:200] bbox
@@ -33,7 +34,7 @@ def createDir(parentdir, dirname):
         clearDir(os.path.join(parentdir, dirname))
 
 # intercept broader area containing human faces for training
-def boundarea(img, bbox, landmark):
+def boundarea(img, bbox, landmark, resize_arr=(200, 250)):
     x,y,a,b = bbox
     w = a-x
     h = b-y
@@ -51,7 +52,18 @@ def boundarea(img, bbox, landmark):
     for ind in range(0, len(landmark), 2):
         landmark[ind] = landmark[ind] - x_new
         landmark[ind+1] = landmark[ind+1] - y_new
-    return img[y_new:y_new+h, x_new:x_new+w, :], new_bbox, landmark
+    img = img[y_new:y_new+h, x_new:x_new+w, :]
+    i_h, i_w, _ = img.shape
+    x_resize_factor = resize_arr[0]/i_w
+    y_resize_factor = resize_arr[1]/i_h
+    img = cv2.resize(img, (0,0), fx=x_resize_factor, fy=y_resize_factor)
+    for ind in range(0, len(new_bbox), 2):
+        new_bbox[ind] = int(new_bbox[ind] * x_resize_factor)
+        new_bbox[ind+1] = int(new_bbox[ind+1] * x_resize_factor)
+    for ind in range(0, len(landmark), 2):
+        landmark[ind] *= x_resize_factor
+        landmark[ind+1] *= y_resize_factor
+    return img, new_bbox, landmark
 count = 0
 pose = 0
 expression = 0
@@ -134,7 +146,10 @@ for line in trainf.readlines():
 
     aug_determinator = random.randint(0,10)
     if 7 > aug_determinator > 2 and aug_count<aug_num:
-        aug_img, aug_bbox, aug_landmark = dataaug._do_random_crop(cropped_rect, bbox_rev, landmark_rev)
+        aug_img = cropped_rect
+        aug_bbox = copy.deepcopy(bbox_rev)
+        aug_landmark = copy.deepcopy(landmark_rev)
+        aug_img, aug_bbox, aug_landmark = dataaug._do_random_crop(aug_img, aug_bbox, aug_landmark)
         file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
         cv2.imwrite(file_name, aug_img)
         anno = file_name.split('/')[-1] + ' '
@@ -150,17 +165,20 @@ for line in trainf.readlines():
         count+=1
         occlusion+=1
 
-        determine_flip = random.randint(0, 2)
+        determine_flip = random.randint(0, 1)
+        flip_img = cropped_rect
+        flip_bbox = copy.deepcopy(bbox_rev)
+        flip_landmark = copy.deepcopy(landmark_rev)
         if determine_flip:
-            aug_img, aug_bbox, aug_landmark = dataaug.horizontal_flip(cropped_rect, bbox_rev, landmark_rev)
+            flip_img, flip_bbox, flip_landmark = dataaug.horizontal_flip(flip_img, flip_bbox, flip_landmark)
         else:
-            aug_img, aug_bbox, aug_landmark = dataaug.vertical_flip(cropped_rect, bbox_rev, landmark_rev)
+            flip_img, flip_bbox, flip_landmark = dataaug.vertical_flip(flip_img, flip_bbox, flip_landmark)
         file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
-        cv2.imwrite(file_name, aug_img)
+        cv2.imwrite(file_name, flip_img)
         anno = file_name.split('/')[-1] + ' '
-        for ind in range(0, len(aug_landmark)):
-            anno = anno + str(aug_landmark[ind]) + ' '
-        for bx in aug_bbox:
+        for ind in range(0, len(flip_landmark)):
+            anno = anno + str(flip_landmark[ind]) + ' '
+        for bx in flip_bbox:
             anno = anno + str(bx) + ' '
         for attribute in attributes:
             anno = anno + str(attribute) + ' '
@@ -168,32 +186,40 @@ for line in trainf.readlines():
         newtrainf.write(anno)
         count+=1
 
-        aug_img = dataaug.brightness(cropped_rect)
+        bright_img = cropped_rect
+        bright_bbox = copy.deepcopy(bbox_rev)
+        bright_landmark = copy.deepcopy(landmark_rev)
+        bright_img = dataaug.brightness(bright_img, bright_bbox, bright_landmark)
         file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
-        cv2.imwrite(file_name, aug_img)
+        cv2.imwrite(file_name, bright_img)
         anno = file_name.split('/')[-1] + ' '
-        for ind in range(0, len(landmark_rev)):
-            anno = anno + str(landmark_rev[ind]) + ' '
-        for bx in bbox_rev:
+        for ind in range(0, len(bright_landmark)):
+            anno = anno + str(bright_landmark[ind]) + ' '
+        for bx in bright_bbox:
             anno = anno + str(bx) + ' '
         attributes[3] = 1
         for attribute in attributes:
             anno = anno + str(attribute) + ' '
         anno = anno + '\n'
+        count+=1
         newtrainf.write(anno)
 
-        aug_img = dataaug.lighting(cropped_rect)
+        light_img = cropped_rect
+        light_bbox = copy.deepcopy(bbox_rev)
+        light_landmark = copy.deepcopy(landmark_rev)
+        light_img, light_bbox, light_landmark = dataaug.lighting(light_img, light_bbox, light_landmark)
         file_name = "./Img Dataset/imgs/train/{}".format(count) + '_' + name.split('/')[1]
-        cv2.imwrite(file_name, aug_img)
+        cv2.imwrite(file_name, light_img)
         anno = file_name.split('/')[-1] + ' '
-        for ind in range(0, len(landmark_rev)):
-            anno = anno + str(landmark_rev[ind]) + ' '
-        for bx in bbox_rev:
+        for ind in range(0, len(light_landmark)):
+            anno = anno + str(light_landmark[ind]) + ' '
+        for bx in light_bbox:
             anno = anno + str(bx) + ' '
         attributes[3] = 1
         for attribute in attributes:
             anno = anno + str(attribute) + ' '
         anno = anno + '\n'
+        count+=1
         newtrainf.write(anno)
 newtrainf.write('{}\n'.format(pose))  # pose number
 newtrainf.write('{}\n'.format(expression))  # expression number
