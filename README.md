@@ -31,3 +31,7 @@ The new loss function adds weights calculated by Euler angle and the attribute o
 $$\frac{1}{M}\sum^{M}_{m=1}\sum^{N}_{n=1}(\sum^{C}_{c=1}w^c_n\sum^{K}_{k=1}(1-cos\theta^k_n))\parallel d^m_n \parallel^2_2$$
 
 where $w^c_n$ represents the weight of attribute of a sample determined by the reciprocal of the fraction of the number of one attribute in a set over the total number of samples in the dataset. $\theta^k_n$ is the Euler Angle for each sample, n, where k represents three angles of Euler Angle, pitch, yaw, roll.
+
+## 7. Visualize annotations
+
+Run test_annotation.py to visualize the landmark on image
