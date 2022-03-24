@@ -34,7 +34,7 @@ def createDir(parentdir, dirname):
         clearDir(os.path.join(parentdir, dirname))
 
 # intercept broader area containing human faces for training
-def boundarea(img, bbox, landmark, resize_arr=(200, 250)):
+def boundarea(img, bbox, landmark, resize_arr=(75, 100)):
     x,y,a,b = bbox
     w = a-x
     h = b-y
