@@ -44,6 +44,9 @@ class TrainFaces(data.Dataset):
             fname = line[0]
             img_path = self.img_path+fname
             lm = list(map(float, line[1:197]))
+            for i in range(0, len(lm), 2):
+                lm[i] /= 75
+                lm[i+1] /= 100  # avoid gradient explosion
             ea = euler_angle_calculation.calculate(lm)
             boundingbox = list(map(int, line[197: 201]))
             attribute = list(map(int, line[201: 207]))
