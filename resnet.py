@@ -74,11 +74,15 @@ class ResNet(nn.Module):
                     self.layers.add_module("conv{}".format(i + 1), BottleNeck(1024, 2048))
                 else:
                     self.layers.add_module("conv{}".format(i + 1), BottleNeck(2048, 2048))
-        self.fc = nn.Linear(2048*3*4, 136)
+        self.fc = nn.Sequential(nn.Linear(2048*4*3, 1024),
+                                nn.ReLU(),
+                                nn.Linear(1024, 512),
+                                nn.ReLU(),
+                                nn.Linear(512, 196))
 
     def forward(self, x):
         out = self.pre_layers(x)
         out = self.layers(out)
-        out = out.view(-1, 2048*3*4)
+        out = out.view(out.size(0), -1)
         out = self.fc(out)
         return out
