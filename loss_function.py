@@ -8,9 +8,9 @@ class LossWithEuler(nn.Module):
         super(LossWithEuler, self).__init__()
         self.attribute_num = torch.tensor(attributes_num) # num of samples in different attr
 
-    def forward(self, inp, label, ea, attribute):
+    def forward(self, inp, label, ea, attribute, batch_size):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        batch_size = 32
+        batch_size = batch_size
         attr_weight_mat = torch.zeros([batch_size, 1])
         angle_weight_mat = torch.zeros([batch_size, 1])
         attr_weight_mat.to(device)
@@ -29,7 +29,13 @@ class LossWithEuler(nn.Module):
         weight = torch.mul(angle_weight_mat, attr_weight_mat)
         weight = weight.to(device)
         mseloss = torch.mean(weight*torch.pow(inp - label, 2))
+        assert torch.isnan(inp).sum()==0, print(inp)
         return mseloss
+
+
+
+
+
 
 
 
