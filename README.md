@@ -18,7 +18,7 @@ Run `pip install -r requirements.txt`
 
 ## 4. Training
 
-First run data-preprocessing.py, it will generate folder Img Dataset with sub-folders： imgs and annotations, which has training and testing set. Then run training.py which will generate a folder models which saves trained model in ckpt.pth.tar.
+First run data-preprocessing.py, it will generate folder Img Dataset with sub-folders： imgs and annotations, which has training and testing set. Then run training.py which will generate a folder models which saves trained model in ckpt.pth.tar. It is better to train multiple rounds based on previously trained models to improve accuracy.
 
 ## 5. Testing
 
