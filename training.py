@@ -98,7 +98,7 @@ correct = 0.0
 total = 0.0
 count = 0
 print('all preparation done, start training')
-for epoch in range(250):
+for epoch in range(1000):
     state = {
         "epoch": epoch+1,
         "state": net.state_dict(),
